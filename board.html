@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装修江湖 · 游戏棋盘</title>
+<style>
+:root {
+  --bg: #F7F4F0; --surface: #EDEAE4; --border: #D4CEC6;
+  --text: #2C2C2C; --muted: #9A958F; --dark: #3A3530;
+  --sage: #7D9B76; --tan: #C4A882; --slate: #8FA8B8;
+  --gold: #C9A84C; --red: #C06B66; --pink: #C8698A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue','PingFang SC','Microsoft YaHei',sans-serif;min-height:100vh;padding:20px 16px}
+h1{text-align:center;font-size:2rem;font-weight:200;letter-spacing:.5em;color:var(--dark);margin-bottom:4px}
+.subtitle{text-align:center;color:var(--muted);font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;margin-bottom:28px}
+
+/* ── LAYOUT ── */
+.board{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:180px 1fr 180px;grid-template-rows:auto auto auto;gap:12px}
+.track-wrap{grid-column:1/4;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+.col-left{display:flex;flex-direction:column;gap:12px}
+.col-center{display:flex;flex-direction:column;gap:12px}
+.col-right{display:flex;flex-direction:column;gap:12px}
+
+/* ── PHASE TRACK ── */
+.track-label{font-size:.65rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.phases{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.phase{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:9px 6px;text-align:center;cursor:pointer;transition:all .18s;position:relative;user-select:none}
+.phase:hover{border-color:var(--sage);transform:translateY(-1px)}
+.phase.active{background:var(--sage);border-color:var(--sage);color:#fff;box-shadow:0 2px 8px rgba(125,155,118,.4)}
+.phase.done{background:var(--surface);border-color:var(--border)}
+.phase.done .p-name{color:var(--muted)}
+.p-num{font-size:.6rem;color:var(--muted);margin-bottom:3px}
+.phase.active .p-num{color:rgba(255,255,255,.7)}
+.p-name{font-size:.72rem;font-weight:500;line-height:1.3}
+.p-arrow{font-size:.55rem;color:var(--muted);margin-top:4px}
+
+/* ── PANEL CARD ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.player-cust{border-top:3px solid var(--slate)}
+.player-m1{border-top:3px solid var(--sage)}
+.player-m2{border-top:3px solid var(--tan)}
+.player-m3{border-top:3px solid var(--red)}
+.p-role{font-size:.6rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.p-name-big{font-size:.95rem;font-weight:600;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.78rem}
+.row-label{color:var(--muted);width:40px;flex-shrink:0}
+.coins{display:flex;flex-wrap:wrap;gap:3px}
+.coin{width:18px;height:18px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#fff;font-weight:700;flex-shrink:0}
+.coin.pre{background:var(--tan)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.68rem;background:var(--bg);border:1px solid var(--border)}
+.badge.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+.badge.warn{background:#FEF3C7;color:#92400E;border:none}
+.badge.go{background:#D1FAE5;color:#065F46;border:none}
+.badge.danger{background:#FEE2E2;color:#991B1B;border:none}
+
+/* ── CENTER PANELS ── */
+.phase-info{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.fi-label{font-size:.6rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.fi-name{font-size:1.1rem;font-weight:600;margin-bottom:10px}
+.fi-status{display:flex;gap:6px;margin-bottom:12px}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.price-cell{background:var(--bg);border-radius:8px;padding:8px 10px}
+.pc-label{font-size:.6rem;color:var(--muted);margin-bottom:2px}
+.pc-val{font-size:.9rem;font-weight:700;color:var(--dark)}
+
+.decks{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;gap:16px;align-items:flex-start}
+.deck{display:flex;flex-direction:column;align-items:center;gap:5px}
+.deck-face{width:52px;height:74px;border-radius:7px;box-shadow:2px 2px 0 var(--border),4px 4px 0 var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
+.deck-face.merchant{background:var(--dark)}
+.deck-face.customer{background:var(--slate)}
+.deck-face.discard{background:var(--border)}
+.deck-count{font-size:.65rem;color:var(--muted);text-align:center;line-height:1.4}
+.deck-count strong{font-size:.85rem;color:var(--text);display:block}
+
+.round-track{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.rt-dots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rt-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--muted)}
+.rt-dot.done{background:var(--sage);border-color:var(--sage);color:#fff}
+.rt-dot.cur{border-color:var(--tan);color:var(--tan);font-weight:700}
+
+.legend{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:.75rem}
+.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+.li{display:flex;align-items:center;gap:7px;font-size:.7rem}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+.rules{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:.72rem;line-height:1.7;color:var(--muted)}
+.rules h3{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rules li{margin-left:12px}
+
+@media(max-width:860px){
+  .board{grid-template-columns:1fr;grid-template-rows:auto}
+  .track-wrap{grid-column:1}
+  .col-left,.col-right{flex-direction:row;flex-wrap:wrap}
+  .col-left .panel,.col-right .panel{flex:1;min-width:140px}
+}
+</style>
+</head>
+<body>
+<h1>装 修 江 湖</h1>
+<p class="subtitle">Renovation Royale · Board Game</p>
+
+<div class="board">
+  <!-- Track -->
+  <div class="track-wrap" style="grid-column:1/4">
+    <div class="track-label">施工阶段进度 · 点击阶段切换当前</div>
+    <div class="phases" id="phases"></div>
+  </div>
+
+  <!-- Left column -->
+  <div class="col-left" style="grid-column:1;grid-row:2/4">
+    <div class="panel player-cust">
+      <div class="p-role">客 户</div>
+      <div class="p-name-big">👤 业主</div>
+      <div class="row"><span class="row-label">现金</span><div class="coins" id="cc"></div></div>
+      <div class="row"><span class="row-label">手牌</span><span class="badge">6 张</span></div>
+      <div class="row"><span class="row-label">状态</span><span class="badge active">谈判中</span></div>
+    </div>
+    <div class="panel player-m1">
+      <div class="p-role">装修集团 A</div>
+      <div class="p-name-big">🏗️ 优居装饰</div>
+      <div class="row"><span class="row-label">现金</span><div class="coins" id="m1c"></div></div>
+      <div class="row"><span class="row-label">资产</span><span class="badge">8¥</span></div>
+      <div class="row"><span class="row-label">手牌</span><span class="badge">4 张</span></div>
+      <div class="row"><span class="row-label">预存</span><div class="coins"><div class="coin pre">¥</div><div class="coin pre">¥</div></div></div>
+    </div>
+    <div class="rules">
+      <h3>核心规则速查</h3>
+      <ul>
+        <li>挂牌价 ¥¥¥¥，行情价 ¥¥¥，成本 ¥¥</li>
+        <li>每回合各商家支出运营成本 ¥</li>
+        <li>装修轮施工商每回合再支出 ¥</li>
+        <li>商家破产即出局；客户破产游戏结束</li>
+        <li>客户胜利：50¥ 完成全部 15 阶段</li>
+        <li>商家胜利：现金流最大（客户成功装修）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Center column -->
+  <div class="col-center" style="grid-column:2;grid-row:2/4">
+    <div class="phase-info">
+      <div class="fi-label">当前阶段</div>
+      <div class="fi-name" id="fiName">① 免费上门量房</div>
+      <div class="fi-status">
+        <span class="badge warn" id="fiStatus">询价轮 1 / 2</span>
+      </div>
+      <div class="price-grid">
+        <div class="price-cell"><div class="pc-label">挂牌价</div><div class="pc-val">¥¥¥¥</div></div>
+        <div class="price-cell"><div class="pc-label">行情价</div><div class="pc-val">¥¥¥</div></div>
+        <div class="price-cell"><div class="pc-label">成本价</div><div class="pc-val">¥¥</div></div>
+        <div class="price-cell"><div class="pc-label">亏本价</div><div class="pc-val">¥</div></div>
+      </div>
+    </div>
+
+    <div class="decks">
+      <div class="deck">
+        <div class="deck-face merchant">🏠</div>
+        <div class="deck-count"><strong>42</strong>商家牌堆</div>
+      </div>
+      <div class="deck">
+        <div class="deck-face customer">👁️</div>
+        <div class="deck-count"><strong>10</strong>客户牌堆</div>
+      </div>
+      <div class="deck">
+        <div class="deck-face discard">🗑️</div>
+        <div class="deck-count"><strong>0</strong>弃牌堆</div>
+      </div>
+      <div style="flex:1;font-size:.72rem;color:var(--muted);line-height:1.8;padding-top:4px">
+        <div>每人手牌上限 <strong>6</strong> 张</div>
+        <div>装修结束摸 <strong>3</strong> 张</div>
+        <div>询价结束各商家弃 <strong>1</strong> 张</div>
+      </div>
+    </div>
+
+    <div class="round-track">
+      <div class="track-label">本阶段回合进度</div>
+      <div class="rt-dots">
+        <div class="rt-dot cur">询1</div>
+        <div class="rt-dot">询2</div>
+        <div class="rt-dot">施1</div>
+        <div class="rt-dot">施2</div>
+        <div class="rt-dot">施3</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="track-label">卡牌颜色图例</div>
+      <div class="legend-grid">
+        <div class="li"><div class="ldot" style="background:var(--sage)"></div>补贴牌 · 促销牌</div>
+        <div class="li"><div class="ldot" style="background:var(--tan)"></div>增项牌 · 预存款牌</div>
+        <div class="li"><div class="ldot" style="background:var(--dark)"></div>跑路牌</div>
+        <div class="li"><div class="ldot" style="background:var(--red)"></div>偷工减料牌</div>
+        <div class="li"><div class="ldot" style="background:var(--slate)"></div>今日优惠 · 超低价</div>
+        <div class="li"><div class="ldot" style="background:var(--gold)"></div>物业作妖牌</div>
+        <div class="li"><div class="ldot" style="background:#6B8FB5"></div>视察工地牌</div>
+        <div class="li"><div class="ldot" style="background:var(--pink)"></div>小红书砍价牌</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div class="col-right" style="grid-column:3;grid-row:2/4">
+    <div class="panel player-m2">
+      <div class="p-role">装修集团 B</div>
+      <div class="p-name-big">🏗️ 品质家装</div>
+      <div class="row"><span class="row-label">现金</span><div class="coins" id="m2c"></div></div>
+      <div class="row"><span class="row-label">资产</span><span class="badge">6¥</span></div>
+      <div class="row"><span class="row-label">手牌</span><span class="badge">6 张</span></div>
+      <div class="row"><span class="row-label">预存</span><div class="coins"><div class="coin pre">¥</div></div></div>
+    </div>
+    <div class="panel player-m3">
+      <div class="p-role">装修集团 C</div>
+      <div class="p-name-big">🏗️ 尊享工坊</div>
+      <div class="row"><span class="row-label">现金</span><div class="coins" id="m3c"></div></div>
+      <div class="row"><span class="row-label">资产</span><span class="badge danger">10¥ 领先</span></div>
+      <div class="row"><span class="row-label">手牌</span><span class="badge">3 张</span></div>
+      <div class="row"><span class="row-label">预存</span><div class="coins"><div class="coin pre">¥</div><div class="coin pre">¥</div><div class="coin pre">¥</div></div></div>
+    </div>
+    <div class="rules">
+      <h3>行动顺序</h3>
+      <ul>
+        <li>资产最高商家决定本轮顺序</li>
+        <li>可选：资产从低→高 或 高→低</li>
+        <li>询价轮：商家出牌 → 客户选商家</li>
+        <li>装修轮：施工商出牌 → 计算费用</li>
+        <li>回合结束：摸3张，弃至6张</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const phaseNames = ['免费上门量房','付费设计','拆除砌筑','电梯安装','水电改造','防水施工','瓦工贴砖','中央空调订购安装','木工吊顶','油工找平涂刷','卫浴订购安装','厨具定制安装','全屋定制柜安装','家具家电订购安装','软装配饰安装'];
+const shortNames = ['免费量房','付费设计','拆除砌筑','电梯安装','水电改造','防水施工','瓦工贴砖','中央空调','木工吊顶','油工涂刷','卫浴安装','厨具定制','全屋定制','家具家电','软装配饰'];
+const nums = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮';
+// Snake: row1=0-4(→), row2=9-5(←snaked display), row3=10-14(→)
+const snakeOrder = [0,1,2,3,4,9,8,7,6,5,10,11,12,13,14];
+const track = document.getElementById('phases');
+const arrows = ['→','→','→','→','↓','←','←','←','←','↓','→','→','→','→',''];
+snakeOrder.forEach((idx,pos)=>{
+  const d=document.createElement('div');
+  d.className='phase'+(idx===0?' active':'');
+  d.dataset.idx=idx;
+  d.innerHTML=`<div class="p-num">${idx+1}</div><div class="p-name">${shortNames[idx]}</div><div class="p-arrow">${arrows[pos]}</div>`;
+  d.addEventListener('click',()=>{
+    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+    d.classList.add('active');
+    document.getElementById('fiName').textContent=nums[idx]+' '+phaseNames[idx];
+  });
+  track.appendChild(d);
+});
+
+function coins(id,n,pre){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const show=Math.min(n,20);
+  for(let i=0;i<show;i++){const c=document.createElement('div');c.className='coin'+(pre?' pre':'');c.textContent='¥';el.appendChild(c);}
+  if(n>20){const more=document.createElement('span');more.style.cssText='font-size:.6rem;color:var(--muted);align-self:center';more.textContent=`+${n-20}`;el.appendChild(more);}
+}
+coins('cc',50);coins('m1c',8);coins('m2c',6);coins('m3c',10);
+</script>
+</body>
+</html>
