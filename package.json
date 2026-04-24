@@ -1,0 +1,14 @@
+{
+  "name": "decoration-boardgame",
+  "version": "1.0.0",
+  "description": "装修江湖桌游 - 卡牌PDF生成工具",
+  "scripts": {
+    "pdf": "node scripts/to-pdf.js",
+    "pdf:cards": "node scripts/to-pdf.js cards",
+    "pdf:board": "node scripts/to-pdf.js board",
+    "pdf:all": "node scripts/to-pdf.js all"
+  },
+  "dependencies": {
+    "puppeteer": "^21.11.0"
+  }
+}
